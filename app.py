@@ -64,6 +64,7 @@ APP.router.add_post("/api/messages", bot_handler.messages)
 
 # Setup WebSocket handler and background tasks
 websocket_handler = WebSocketHandler(conn_str, 'Hub', bot_handler)
+BOT.set_ws_handler(websocket_handler)
 
 async def start_background_tasks(app):
     app['websocket_task'] = websocket_handler.get_task(app)

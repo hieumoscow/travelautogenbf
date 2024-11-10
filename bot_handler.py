@@ -2,12 +2,14 @@
 import logging
 import json
 from aiohttp.web import Request, Response, json_response
-from botbuilder.schema import Activity, ActivityTypes, ConversationReference, ChannelAccount, ConversationParameters
-from typing import Optional
+from botbuilder.schema import Activity,ActionTypes, ActivityTypes, ConversationReference, ChannelAccount, ConversationParameters, CardAction, SuggestedActions
+from typing import List, Optional
 from botbuilder.core import (
     TurnContext,
 )
 from botbuilder.integration.aiohttp import CloudAdapter
+
+from suggested_actions import get_suggested_actions
 
 LOG = logging.getLogger(__name__)
 
@@ -49,6 +51,19 @@ class BotHandler:
             return json_response(data=response.body, status=response.status)
         return Response(status=201)
 
+    def create_suggested_actions(self, actions_data: List[dict]) -> SuggestedActions:
+        """Create suggested actions from provided data"""
+        return SuggestedActions(
+            actions=[
+                CardAction(
+                    title=action.get("title", ""),
+                    type=ActionTypes.im_back,
+                    value=action.get("value", action.get("title", ""))
+                )
+                for action in actions_data
+            ]
+        )
+
     async def process_websocket_message(self, message: str):
         """Process incoming WebSocket messages"""
         if not self.last_conversation_reference:
@@ -56,18 +71,28 @@ class BotHandler:
             return
 
         try:
-            # Parse message as JSON
             try:
                 message_data = json.loads(message)
-                text = message_data.get('message', '')
+                # Extract main message content
+                if "message" in message_data:
+                    text = message_data["message"]
+                else:
+                    formatted_text = []
+                    for key, value in message_data.items():
+                        if key not in ["agent", "suggested_actions"]:
+                            formatted_text.append(f"{key}: {value}")
+                    text = "\n".join(formatted_text)
+
                 agent_name = message_data.get('agent', 'AutoGen Agent')
+                suggested_actions_data = message_data.get('suggested_actions', [])
                 LOG.info(f"Processing message from agent: {agent_name}")
             except json.JSONDecodeError:
                 text = message
                 agent_name = 'AutoGen Agent'
+                suggested_actions_data = []
 
             async def callback(context: TurnContext):
-                # Create a proper Activity object
+                # Send the main message
                 message_activity = Activity(
                     type=ActivityTypes.message,
                     text=text,
@@ -76,7 +101,13 @@ class BotHandler:
                         name=agent_name
                     )
                 )
+
+                # Add suggested actions if provided
+                if suggested_actions_data:
+                    message_activity.suggested_actions = self.create_suggested_actions(suggested_actions_data)
+
                 await context.send_activity(message_activity)
+
             await self.bot_adapter.continue_conversation(
                 self.last_conversation_reference, 
                 callback,
