@@ -78,6 +78,11 @@ APP.on_cleanup.append(cleanup_background_tasks)
 
 if __name__ == "__main__":
     try:
-        web.run_app(APP, host="localhost", port=CONFIG.PORT)
+        # For local development
+        if 'WEBSITE_HOSTNAME' not in os.environ:
+            web.run_app(APP, host="localhost", port=CONFIG.PORT)
+        # For Azure App Service
+        else:
+            web.run_app(APP, host="0.0.0.0", port=8000)
     except Exception as error:
         raise error

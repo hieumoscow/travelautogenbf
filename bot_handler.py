@@ -2,7 +2,7 @@
 import logging
 import json
 from aiohttp.web import Request, Response, json_response
-from botbuilder.schema import Activity,ActionTypes, ActivityTypes, ConversationReference, ChannelAccount, ConversationParameters, CardAction, SuggestedActions
+from botbuilder.schema import Activity, ActionTypes, ActivityTypes, ConversationReference, ChannelAccount, ConversationParameters, CardAction, SuggestedActions, Attachment
 from typing import List, Optional
 from botbuilder.core import (
     TurnContext,
@@ -76,7 +76,7 @@ class BotHandler:
             )
         )
         await turn_context.send_activity(typing_activity)
-
+    
     async def process_websocket_message(self, message: str):
         """Process incoming WebSocket messages"""
         if not self.last_conversation_reference:
@@ -89,26 +89,40 @@ class BotHandler:
             agent_name = message_data.get('agent', 'AutoGen Agent')
             
             async def callback(context: TurnContext):
-                # Create suggested actions
-                card_actions = [
-                    CardAction(
-                        title=action["title"],
-                        type=ActionTypes.im_back,
-                        value=action["value"]
-                    )
-                    for action in suggested_actions
-                ]
+                # Create adaptive card
+                card = {
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "text": formatted_text,
+                            "wrap": True,
+                            "size": "Medium"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "type": "Action.Submit",
+                            "title": action["title"],
+                            "data": action["value"]
+                        }
+                        for action in suggested_actions
+                    ]
+                }
+
+                attachment = Attachment(
+                    content_type="application/vnd.microsoft.card.adaptive",
+                    content=card
+                )
                 
-                # Create activity with both text and suggested actions
+                # Create activity with the adaptive card
                 message_activity = Activity(
                     type=ActivityTypes.message,
-                    text=formatted_text,
+                    attachments=[attachment],
                     from_property=ChannelAccount(
                         id=f"agent-{agent_name.lower().replace(' ', '-')}",
                         name=agent_name
-                    ),
-                    suggested_actions=SuggestedActions(
-                        actions=card_actions
                     )
                 )
                 await context.send_activity(message_activity)

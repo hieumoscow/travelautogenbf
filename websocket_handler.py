@@ -1,5 +1,6 @@
 """Handles WebSocket connections and message processing"""
 import logging
+import os
 from azure.messaging.webpubsubservice import WebPubSubServiceClient
 import websockets
 import asyncio
@@ -36,9 +37,12 @@ class WebSocketHandler:
         LOG.info("WebSocket handler initialized")
 
         # Create a complete default conversation reference with all required fields
+        service_url = os.getenv('SERVICE_URL', 'http://localhost:3978')
+        if 'WEBSITE_HOSTNAME' in os.environ:
+            service_url = f"https://{os.environ['WEBSITE_HOSTNAME']}"
         self.default_conversation_reference = ConversationReference(
             channel_id="emulator",
-            service_url="http://localhost:50428",
+            service_url=service_url,
             conversation=ConversationAccount(
                 id="websocket-conversation",
                 name="WebSocket Conversation",
@@ -94,8 +98,8 @@ class WebSocketHandler:
         try:
             # Get a fresh token URL each time we connect
             client_access_token = self.service.get_client_access_token()
-            test_url = "wss://travel-chatbot.grayground-1ee6f428.southeastasia.azurecontainerapps.io/chat"
-            
+            test_url = os.getenv('WEBSOCKET_URL', client_access_token['url'])
+            logging.info(f"Connecting to {test_url}")
             self.connection = await websockets.connect(
                 test_url, #client_access_token['url'],
                 ping_interval=30,

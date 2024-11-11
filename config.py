@@ -7,6 +7,6 @@ import os
 class DefaultConfig:
     """ Bot Configuration """
 
-    PORT = 3978
+    SERVICE_URL = os.environ.get("SERVICE_URL", "http://localhost:3978")
     APP_ID = os.environ.get("MicrosoftAppId", "")
     APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "")
