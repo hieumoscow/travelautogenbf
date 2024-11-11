@@ -6,10 +6,126 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
 
 ## Teams 
 
+# Travel Assistant Bot with AutoGen Integration
+
+A sophisticated travel assistant chatbot built using Microsoft's Bot Framework and AutoGen, featuring real-time AI interactions through WebSocket connections.
+
 <div style="display: flex; justify-content: space-between;">
     <img src="./assets/teams1.png" alt="Teams" style="width: 49%; height: auto;">
     <img src="./assets/teams2.png" alt="Teams" style="width: 49%; height: auto;">
 </div>
+
+## Features
+
+- **Real-time AI Responses**: Integrates with AutoGen for intelligent travel recommendations and information
+- **Multi-channel Support**: Works seamlessly on Microsoft Teams and Bot Framework Emulator
+- **Interactive UI**: Features suggested action buttons for common queries
+- **Structured Information Display**: Formatted responses for various types of travel information:
+  - Destination details and cultural information
+  - Local activities and attractions
+  - Food recommendations
+  - Travel timing suggestions
+
+## Architecture
+
+- **Bot Framework Core**: Handles message processing and channel integration
+- **WebSocket Integration**: Real-time communication with AutoGen backend
+- **Azure Web PubSub**: Manages WebSocket connections and message routing
+- **Structured Message Handling**: Formats different types of travel information for optimal display
+
+## Message Types Supported
+
+1. **Destination Information**
+   - City and country details
+   - Best time to visit
+   - Weather information
+   - Currency and language
+   - Similar destinations
+
+2. **Activities Information**
+   - Categorized activities (Attractions, Hidden Gems, Family-Friendly, etc.)
+   - Detailed descriptions
+   - Location-specific recommendations
+
+3. **Cultural and Food Information**
+   - Local cuisine recommendations
+   - Cultural highlights
+   - Historical sites
+
+## Prerequisites
+
+- Python 3.6 or higher
+- Azure account for Web PubSub service
+- Bot Framework Emulator (for local testing)
+
+## Setup and Installation
+
+1. **Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+2. **Environment Configuration**
+Create a `.env` file with:
+```
+WEBPUBSUB_CONNECTION_STRING1=your_connection_string
+```
+
+3. **Run the Bot**
+```bash
+python app.py
+```
+
+## Local Testing
+
+1. Install [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator)
+2. Connect to `http://localhost:3978/api/messages`
+3. Start chatting with the travel assistant
+
+## Teams Integration
+
+The bot is fully compatible with Microsoft Teams, providing:
+- Interactive message cards
+- Suggested actions
+- Rich text formatting
+- Emoji support
+
+<div style="display: flex; justify-content: space-between;">
+    <img src="./assets/teams1.png" alt="Teams Chat" style="width: 49%; height: auto;">
+    <img src="./assets/teams2.png" alt="Teams Interaction" style="width: 49%; height: auto;">
+</div>
+
+## Project Structure
+
+```
+├── app.py                 # Main application entry point
+├── bot.py                 # Bot logic and message handling
+├── bot_handler.py         # Bot Framework message processing
+├── websocket_handler.py   # WebSocket connection management
+└── data_types.py         # Message type definitions
+```
+
+## Key Components
+
+- **Bot Handler**: Manages incoming messages and channel interactions
+- **WebSocket Handler**: Maintains real-time connection with AutoGen
+- **Message Formatter**: Structures responses for optimal display
+- **Suggested Actions**: Provides interactive buttons for common queries
+
+## Future Enhancements
+
+- Integration with flight booking systems
+- Hotel recommendations
+- Itinerary planning
+- Multi-language support
+- User preference tracking
+
+## Resources
+
+- [Bot Framework Documentation](https://docs.botframework.com)
+- [Azure Bot Service](https://azure.microsoft.com/services/bot-services/)
+- [AutoGen Documentation](https://microsoft.github.io/autogen/)
+- [Teams Integration Guide](https://docs.microsoft.com/microsoftteams/platform/)
 
 ## Prerequisites
 
