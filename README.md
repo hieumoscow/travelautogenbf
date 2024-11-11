@@ -1,8 +1,15 @@
-# travelautogenbf
+# Travel Autogen Bot Framework
 
 Demonstrate the core capabilities of the Microsoft Bot Framework
 
 This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a simple bot that accepts input from the user and echoes it back.
+
+## Teams 
+
+<div style="display: flex; justify-content: space-between;">
+    <img src="./assets/teams1.png" alt="Teams" style="width: 49%; height: auto;">
+    <img src="./assets/teams2.png" alt="Teams" style="width: 49%; height: auto;">
+</div>
 
 ## Prerequisites
 
