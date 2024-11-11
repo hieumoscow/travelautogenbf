@@ -9,6 +9,7 @@ from botbuilder.core import (
 )
 from botbuilder.integration.aiohttp import CloudAdapter
 
+from message_formatter import MessageFormatter
 from suggested_actions import get_suggested_actions
 
 LOG = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class BotHandler:
         self.app_id = app_id
         self.bot = bot
         self.last_conversation_reference: Optional[ConversationReference] = None
+        self.message_formatter = MessageFormatter()
 
     def create_conversation(self) -> ConversationReference:
         conversationParam = ConversationParameters(is_group=False, bot=self.bot, members=[ChannelAccount(id=self.app_id)],)
@@ -64,6 +66,17 @@ class BotHandler:
             ]
         )
 
+    async def show_typing(self, turn_context: TurnContext):
+        """Send typing indicator"""
+        typing_activity = Activity(
+            type=ActivityTypes.typing,
+            from_property=ChannelAccount(
+                id="travel-assistant",
+                name="Travel Assistant"
+            )
+        )
+        await turn_context.send_activity(typing_activity)
+
     async def process_websocket_message(self, message: str):
         """Process incoming WebSocket messages"""
         if not self.last_conversation_reference:
@@ -71,43 +84,35 @@ class BotHandler:
             return
 
         try:
-            try:
-                message_data = json.loads(message)
-                # Extract main message content
-                if "message" in message_data:
-                    text = message_data["message"]
-                else:
-                    formatted_text = []
-                    for key, value in message_data.items():
-                        if key not in ["agent", "suggested_actions"]:
-                            formatted_text.append(f"{key}: {value}")
-                    text = "\n".join(formatted_text)
-
-                agent_name = message_data.get('agent', 'AutoGen Agent')
-                suggested_actions_data = message_data.get('suggested_actions', [])
-                LOG.info(f"Processing message from agent: {agent_name}")
-            except json.JSONDecodeError:
-                text = message
-                agent_name = 'AutoGen Agent'
-                suggested_actions_data = []
-
+            message_data = json.loads(message)
+            formatted_text, suggested_actions = self.message_formatter.format_message(message_data)
+            agent_name = message_data.get('agent', 'AutoGen Agent')
+            
             async def callback(context: TurnContext):
-                # Send the main message
+                # Create suggested actions
+                card_actions = [
+                    CardAction(
+                        title=action["title"],
+                        type=ActionTypes.im_back,
+                        value=action["value"]
+                    )
+                    for action in suggested_actions
+                ]
+                
+                # Create activity with both text and suggested actions
                 message_activity = Activity(
                     type=ActivityTypes.message,
-                    text=text,
+                    text=formatted_text,
                     from_property=ChannelAccount(
                         id=f"agent-{agent_name.lower().replace(' ', '-')}",
                         name=agent_name
+                    ),
+                    suggested_actions=SuggestedActions(
+                        actions=card_actions
                     )
                 )
-
-                # Add suggested actions if provided
-                if suggested_actions_data:
-                    message_activity.suggested_actions = self.create_suggested_actions(suggested_actions_data)
-
                 await context.send_activity(message_activity)
-
+                
             await self.bot_adapter.continue_conversation(
                 self.last_conversation_reference, 
                 callback,
