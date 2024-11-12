@@ -34,6 +34,7 @@ class WebSocketHandler:
         self.max_reconnect_attempts = 10  # Maximum number of quick reconnection attempts
         self.last_reconnect_time = None
         self.heartbeat_task = None
+        self.is_processing = False  # Add this line to track message processing state
         LOG.info("WebSocket handler initialized")
 
         # Create a complete default conversation reference with all required fields
@@ -152,7 +153,13 @@ class WebSocketHandler:
                 return
 
         try:
-            await self.connection.send(message)
+            if isinstance(message, (dict, list)):
+                message_to_send = json.dumps(message)
+            else:
+                message_to_send = str(message)  # Ensure string conversion
+
+            LOG.debug(f"Sending serialized message: {message_to_send}")
+            await self.connection.send(message_to_send)
             LOG.info(f"Sent message: {message}")
         except Exception as e:
             LOG.error(f"Error sending message: {str(e)}")
@@ -178,13 +185,26 @@ class WebSocketHandler:
 
                 async for message in self.connection:
                     LOG.info(f"Received message: {message}")
+                    
+                    # Show typing indicator before processing
+                    if not self.is_processing:
+                        self.is_processing = True
+                        await self.bot_handler.bot_adapter.continue_conversation(
+                            self.bot_handler.last_conversation_reference,
+                            self.bot_handler.show_typing,
+                            self.bot_handler.app_id
+                        )
+
                     formatted_message = self.format_message_with_actions(message)
                     await self.bot_handler.process_websocket_message(formatted_message)
+                    self.is_processing = False
 
             except websockets.exceptions.ConnectionClosed as closed_error:
+                self.is_processing = False  # Reset processing state on connection close
                 LOG.warning(f"WebSocket connection closed ({closed_error.code}): {closed_error.reason}")
                 self.connection = None
             except Exception as e:
+                self.is_processing = False  # Reset processing state on error
                 LOG.error(f"Error in receive_messages: {str(e)}")
                 self.connection = None
 
